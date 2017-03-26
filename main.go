@@ -14,12 +14,15 @@ import (
 	"time"
 )
 
+const reposPath = "repos"
+
 var (
 	infoLog   *log.Logger
 	debugLog  *log.Logger
 	debugMode bool
 	exiting   chan struct{}
 	wg        sync.WaitGroup
+	pm        ProjectManager
 )
 
 func main() {
@@ -37,11 +40,20 @@ func main() {
 		<-time.After(time.Second * 2)
 		wg.Done()
 	}()
+	info("test1")
 
+	pm = ProjectManager{make(chan *Project), make(map[string]*Project)}
+	go pm.Run()
+	p := makeProject("pin8", "git://github.com/olemoudi/pin8.git")
+	info("test2")
+	wg.Add(1)
+	info("test3")
+	debug("adding new project", "pin8")
+	pm.add <- &p
+	info("test4")
+	<-time.After(time.Second * 100)
 	//wg.Add(1)
-	//go repoManager()
-	//wg.Add(1)
-	webServer()
+	//webServer()
 
 	// sync workers
 	broadcastExit("regular")
@@ -63,6 +75,11 @@ func main() {
 		iter.ForEach(printBranch)
 	*/
 
+}
+
+func shutDown(msg string) {
+	info("Shutting down: ", msg)
+	close(exiting)
 }
 
 func LogInit(debug_flag bool) {
@@ -96,8 +113,8 @@ func info(msg ...string) {
 	for i, v := range msg {
 		s[i] = v
 	}
-	//infoLog.Println(s...)
-	infoLog.Println(msg)
+	infoLog.Println(s...)
+	//infoLog.Println(msg)
 }
 
 func debug(msg ...string) {
