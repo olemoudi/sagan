@@ -51,9 +51,9 @@ func main() {
 	debug("adding new project", "pin8")
 	pm.add <- &p
 	info("test4")
-	<-time.After(time.Second * 100)
-	//wg.Add(1)
-	//webServer()
+	//<-time.After(time.Second * 100)
+	wg.Add(1)
+	webServer()
 
 	// sync workers
 	broadcastExit("regular")
