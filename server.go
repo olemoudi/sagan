@@ -4,7 +4,9 @@ import (
 	// "fmt"
 	// "io"
 	"gopkg.in/gin-gonic/gin.v1"
-	"io"
+	"gopkg.in/libgit2/git2go.v24"
+	//"io"
+	"github.com/golang/protobuf/proto"
 	"log"
 	"net/http"
 )
@@ -30,9 +32,29 @@ func ListProjects(w http.ResponseWriter, req *http.Request) {
 */
 
 func ListProjects(c *gin.Context) {
+	for _, v := range pm.ListProjectNames() {
+		c.JSON(http.StatusOK, gin.H{"project_name": v})
+	}
 }
 
 func ListProject(c *gin.Context) {
+	p := pm.projects[c.Param("name")]
+	branch, err := p.repo.LookupBranch("master", git.BranchAll)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "error with branch")
+		return
+	}
+	name, err := branch.Name()
+	if err != nil {
+		c.String(http.StatusInternalServerError, "error with branch name")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"branch_name": name})
+}
+
+func ListProjectProto(c *gin.Context) {
+	p := pb.PbProject{}
+
 }
 
 func loadRoutes() {
@@ -50,7 +72,7 @@ func webServer() {
 
 	loadRoutes()
 
-	http.HandleFunc("/projects", ListProjects)
+	//http.HandleFunc("/projects", ListProjects)
 	info("Starting web server...")
 	var server http.Server
 	server.Addr = ":8443"

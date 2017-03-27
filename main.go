@@ -52,6 +52,7 @@ func main() {
 	pm.add <- &p
 	info("test4")
 	//<-time.After(time.Second * 100)
+	//p = makeProject("oportuno", "git://github.com/olemoudi/oportuno.git")
 	wg.Add(1)
 	webServer()
 

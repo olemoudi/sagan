@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package main;
+
+message PbProject {
+    int32 id = 1;
+    string name = 2;
+    string uri = 3;
+    message PbBranch {
+        string name = 1;
+    }
+    repeated PbBranch branches = 4;
+}

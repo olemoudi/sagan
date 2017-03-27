@@ -1,0 +1,5 @@
+*.swp
+*.key
+*.crt
+repos
+tls
