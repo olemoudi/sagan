@@ -40,17 +40,14 @@ func main() {
 		<-time.After(time.Second * 2)
 		wg.Done()
 	}()
-	info("test1")
 
 	pm = ProjectManager{make(chan *Project), make(map[string]*Project)}
 	go pm.Run()
 	p := makeProject("pin8", "git://github.com/olemoudi/pin8.git")
-	info("test2")
 	wg.Add(1)
-	info("test3")
-	debug("adding new project", "pin8")
 	pm.add <- &p
-	info("test4")
+	p = makeProject("sqlmap", "git://github.com/sqlmapproject/sqlmap.git")
+	pm.add <- &p
 	//<-time.After(time.Second * 100)
 	//p = makeProject("oportuno", "git://github.com/olemoudi/oportuno.git")
 	wg.Add(1)

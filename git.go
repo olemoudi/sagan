@@ -6,50 +6,6 @@ import (
 	"time"
 )
 
-type Project struct {
-	name string
-	uri  string
-	lock chan interface{}
-	repo *git.Repository
-}
-
-func (p Project) Lock() {
-	p.lock <- struct{}{}
-}
-func (p Project) Unlock() {
-	<-p.lock
-}
-
-func (p Project) listBranches() []string {
-	if p.repo == nil {
-		return nil
-	}
-
-	iter, err := p.repo.NewBranchIterator(git.BranchAll)
-	if err != nil {
-		return nil
-	}
-
-	names := make([]string, 1)
-	iter.ForEach(func(b *git.Branch, btype git.BranchType) error {
-		name, err := b.Name()
-		if err != nil {
-			debug("error while listing branchname")
-			return err
-		}
-		names = append(names, name)
-		return nil
-	})
-
-	return names
-
-}
-
-func makeProject(name, uri string) Project {
-	p := Project{name, uri, make(chan interface{}, 1), nil}
-	return p
-}
-
 type ProjectManager struct {
 	add      chan *Project
 	projects map[string]*Project
@@ -66,7 +22,6 @@ loop:
 			break loop
 		case newproject := <-pm.add:
 			debug("received new project")
-			pm.projects[newproject.name] = newproject
 			go pm.CreateProject(newproject)
 		case <-time.After(time.Second * 30):
 			go pm.UpdateProjects()
@@ -76,7 +31,7 @@ loop:
 }
 
 func (pm ProjectManager) ListProjectNames() []string {
-	projects := make([]string, 1)
+	projects := make([]string, 0)
 	for k, _ := range pm.projects {
 		projects = append(projects, k)
 	}
@@ -87,14 +42,22 @@ func getProject(name string) *Project {
 	return pm.projects[name]
 }
 
+//TODO: update on bursts
 func (pm ProjectManager) UpdateProjects() {
 	debug("updating projects...")
+	for _, p := range pm.projects {
+		go p.Update()
+	}
 	debug("projects update complete")
+
 }
 
 func (pm ProjectManager) CreateProject(p *Project) {
+	debug("adding new project", p.name)
 	p.Lock()
 	defer p.Unlock()
+
+	pm.projects[p.name] = p
 
 	path := reposPath + string(filepath.Separator) + p.name
 	dirExists, err := exists(path)
