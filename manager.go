@@ -23,10 +23,9 @@ loop:
 		case newproject := <-pm.add:
 			debug("received new project")
 			go pm.CreateProject(newproject)
-		case <-time.After(time.Second * 30):
+		case <-time.After(time.Second * 10):
 			go pm.UpdateProjects()
 		}
-
 	}
 }
 
@@ -46,7 +45,7 @@ func getProject(name string) *Project {
 func (pm ProjectManager) UpdateProjects() {
 	debug("updating projects...")
 	for _, p := range pm.projects {
-		go p.Update()
+		p.Update()
 	}
 	debug("projects update complete")
 
@@ -80,5 +79,5 @@ func (pm ProjectManager) CreateProject(p *Project) {
 		}
 	}
 	p.repo = repo
-	debug("project created")
+	debug(p.name, "project created")
 }

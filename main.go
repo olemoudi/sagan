@@ -45,9 +45,9 @@ func main() {
 	go pm.Run()
 	p := makeProject("pin8", "git://github.com/olemoudi/pin8.git")
 	wg.Add(1)
-	pm.add <- &p
-	p = makeProject("sqlmap", "git://github.com/sqlmapproject/sqlmap.git")
-	pm.add <- &p
+	pm.add <- p
+	//p = makeProject("sqlmap", "git://github.com/sqlmapproject/sqlmap.git")
+	pm.add <- makeProject("sqlmap", "git://github.com/sqlmapproject/sqlmap.git")
 	//<-time.After(time.Second * 100)
 	//p = makeProject("oportuno", "git://github.com/olemoudi/oportuno.git")
 	wg.Add(1)
