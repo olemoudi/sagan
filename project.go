@@ -2,7 +2,6 @@ package main
 
 import (
 	"gopkg.in/libgit2/git2go.v24"
-	"strconv"
 )
 
 type Project struct {
@@ -45,52 +44,72 @@ func (p Project) Update() {
 		debug(remoteName, "remote updated")
 	}
 	debug(p.name, "updated")
-	debug("last commits to master")
-	//ref, err := p.repo.Head()
-	refiter, err := p.repo.NewReferenceIterator()
-	ce(err, "error extracting Reference Iterator from repo")
-	//ref, err := refiter.Next()
-	ref, err := p.repo.Head()
-	if ce(err, "Error getting first commit") {
-		return
-	}
+	debug("last 10 commits to master")
+	revwalk, err := p.repo.Walk()
+	revwalk.PushHead()
 	counter := 1
+	err = revwalk.Iterate(func(c *git.Commit) bool {
+		debug("Commit id", c.TreeId().String())
+		debug("Msg", c.Message())
 
-	oid := ref.Target()
-	commit, err := p.repo.LookupCommit(oid)
-	if ce(err, "Error looking up commit") {
-	}
-	debug("Commit #", strconv.Itoa(counter))
-	//debug(hex.EncodeToString([20]byte(commit.TreeId())))
-	debug(commit.TreeId().String())
-	//debug(string(commit.TreeId()[:20]))
-	counter = counter + 1
-	ref, err = refiter.Next()
-	if ce(err, "Error getting next commit") {
-
-	}
-	/*
-		for err == nil && counter < 3 {
-			oid := ref.Target()
-			commit, err := p.repo.LookupCommit(oid)
-			if ce(err, "Error looking up commit") {
-				counter = counter + 1
-				continue
-			}
-			debug("Commit #", strconv.Itoa(counter))
-			//debug(hex.EncodeToString([20]byte(commit.TreeId())))
-			debug(commit.TreeId().String())
-			//debug(string(commit.TreeId()[:20]))
-			counter = counter + 1
-			ref, err = refiter.Next()
-			if ce(err, "Error getting next commit") {
-				break
-			}
+		debug("=========")
+		counter = counter + 1
+		if counter >= 10 {
+			return false
+		} else {
+			return true
 		}
+
+	})
+
+	/*
+		//ref, err := p.repo.Head()
+		refiter, err := p.repo.NewReferenceIterator()
+		ce(err, "error extracting Reference Iterator from repo")
+		//ref, err := refiter.Next()
+		ref, err := p.repo.Head()
+		if ce(err, "Error getting first commit") {
+			return
+		}
+		counter := 1
+
+		oid := ref.Target()
+		commit, err := p.repo.LookupCommit(oid)
+		if ce(err, "Error looking up commit") {
+		}
+		debug("Commit #", strconv.Itoa(counter))
+		//debug(hex.EncodeToString([20]byte(commit.TreeId())))
+		debug(commit.TreeId().String())
+		//debug(string(commit.TreeId()[:20]))
+		counter = counter + 1
+		ref, err = refiter.Next()
+		if ce(err, "Error getting next commit") {
+
+		}
+		/*
+			for err == nil && counter < 3 {
+				oid := ref.Target()
+				commit, err := p.repo.LookupCommit(oid)
+				if ce(err, "Error looking up commit") {
+					counter = counter + 1
+					continue
+				}
+				debug("Commit #", strconv.Itoa(counter))
+				//debug(hex.EncodeToString([20]byte(commit.TreeId())))
+				debug(commit.TreeId().String())
+				//debug(string(commit.TreeId()[:20]))
+				counter = counter + 1
+				ref, err = refiter.Next()
+				if ce(err, "Error getting next commit") {
+					break
+				}
+			}
 	*/
 
-	//oid := ref.Target()
-	//_, err = p.repo.LookupCommit(oid)
+	/*
+		//oid := ref.Target()
+		//_, err = p.repo.LookupCommit(oid)
+	*/
 
 }
 func (p Project) ListAllBranches() []string {
