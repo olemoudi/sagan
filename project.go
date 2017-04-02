@@ -2,14 +2,15 @@ package main
 
 import (
 	"gopkg.in/libgit2/git2go.v24"
+	"path/filepath"
 )
 
 type Project struct {
-	name string
-	uri  string
-	lock chan interface{}
-	repo *git.Repository
-	//repo *CodeRepo
+	name       string
+	uri        string
+	lock       chan interface{}
+	repo       *git.Repository
+	remoteName string
 }
 
 func (p Project) Lock() {
@@ -22,45 +23,34 @@ func (p Project) Unlock() {
 func (p Project) Update() {
 	p.Lock()
 	defer p.Unlock()
-	debug("updating project", p.name)
-	remoteNames, err := p.repo.Remotes.List()
-	if err != nil {
-		info("Error retrieving remotes for project", p.name)
-		return
-	}
-
-	for _, remoteName := range remoteNames {
-		debug("updating", remoteName)
-		remote, err := p.repo.Remotes.Lookup(remoteName)
-		if err != nil {
-			panic("error lookingup remote")
-		}
-
-		refspecs, err := remote.FetchRefspecs()
-		if err != nil {
-			panic("error retrieving refspecs for remote" + remoteName)
-		}
-		remote.Fetch(refspecs, &git.FetchOptions{}, "")
-		debug(remoteName, "remote updated")
-	}
+	debug("updating", p.name)
+	debug("updating remote", p.remoteName)
+	remote, err := p.repo.Remotes.Lookup(p.remoteName)
+	cep(err, true, "Error looking up remote")
+	refspecs, err := remote.FetchRefspecs()
+	cep(err, true, "Error retrieving refspecs for remote", p.remoteName)
+	remote.Fetch(refspecs, &git.FetchOptions{}, "")
 	debug(p.name, "updated")
-	debug("last 10 commits to master")
-	revwalk, err := p.repo.Walk()
-	revwalk.PushHead()
-	counter := 1
-	err = revwalk.Iterate(func(c *git.Commit) bool {
-		debug("Commit id", c.TreeId().String())
-		debug("Msg", c.Message())
+	/*
+		debug("last 10 commits to master")
+		revwalk, err := p.repo.Walk()
+		revwalk.PushHead()
+		counter := 1
+		err = revwalk.Iterate(func(c *git.Commit) bool {
+			debug("Commit id", c.TreeId().String())
+			debug("Msg", c.Message())
 
-		debug("=========")
-		counter = counter + 1
-		if counter >= 10 {
-			return false
-		} else {
-			return true
-		}
+			debug("=========")
+			counter = counter + 1
+			if counter >= 10 {
+				return false
+			} else {
+				return true
+			}
 
-	})
+		})
+
+	*/
 
 	/*
 		//ref, err := p.repo.Head()
@@ -145,6 +135,29 @@ func (p Project) ListBranches(flags git.BranchType) []string {
 }
 
 func makeProject(name, uri string) *Project {
-	p := Project{name, uri, make(chan interface{}, 1), nil}
+	debug("creating new project", name)
+	p := Project{name, uri, make(chan interface{}, 1), nil, "origin"}
+	p.Lock()
+	defer p.Unlock()
+
+	pm.projects[p.name] = &p
+	path := reposPath + string(filepath.Separator) + p.name
+	dirExists, err := exists(path)
+	if err != nil {
+		debug("dir existence check returned error", err.Error())
+	}
+	var repo *git.Repository
+	if dirExists {
+		debug("target dir for repo already exists, attempting to open local repository")
+		repo, err = git.OpenRepository(path)
+		cep(err, true, "")
+	} else {
+		debug("Cloning repository from", p.uri, "into", path)
+		options := &git.CloneOptions{}
+		repo, err = git.Clone(p.uri, path, options)
+		cep(err, true, "")
+	}
+	p.repo = repo
+	debug(p.name, "project created")
 	return &p
 }

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"gopkg.in/libgit2/git2go.v24"
-	"path/filepath"
 	"time"
 )
 
@@ -20,9 +18,9 @@ loop:
 		select {
 		case <-exiting:
 			break loop
-		case newproject := <-pm.add:
+		case _ = <-pm.add:
 			debug("received new project")
-			go pm.CreateProject(newproject)
+
 		case <-time.After(time.Second * 10):
 			go pm.UpdateProjects()
 		}
@@ -49,35 +47,4 @@ func (pm ProjectManager) UpdateProjects() {
 	}
 	debug("projects update complete")
 
-}
-
-func (pm ProjectManager) CreateProject(p *Project) {
-	debug("adding new project", p.name)
-	p.Lock()
-	defer p.Unlock()
-
-	pm.projects[p.name] = p
-
-	path := reposPath + string(filepath.Separator) + p.name
-	dirExists, err := exists(path)
-	if err != nil {
-		debug(err.Error())
-	}
-	var repo *git.Repository
-	if dirExists {
-		debug("target dir for repo already exists, attempting to open local repository")
-		repo, err = git.OpenRepository(path)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		debug("Cloning repository from", p.uri, "into", path)
-		options := &git.CloneOptions{}
-		repo, err = git.Clone(p.uri, path, options)
-		if err != nil {
-			panic(err)
-		}
-	}
-	p.repo = repo
-	debug(p.name, "project created")
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gopkg.in/libgit2/git2go.v24"
+	"os"
 	"strconv"
 )
 
@@ -25,6 +26,22 @@ func ce(err error) {
 	}
 }
 
+/*
+func (p Project) Update() {
+	p.Lock()
+	defer p.Unlock()
+	debug("updating", p.name)
+	//remoteNames, err := p.repo.Remotes.List()
+	debug("updating remote", p.remoteName)
+	remote, err := p.repo.Remotes.Lookup(p.remoteName)
+	cep(err, true, "Error looking up remote")
+	refspecs, err := remote.FetchRefspecs()
+	cep(err, true, "Error retrieving refspecs for remote", p.remoteName)
+	remote.Fetch(refspecs, &git.FetchOptions{}, "")
+	debug(p.name, "updated")
+}
+*/
+
 var counter = 1
 
 var c1, c2 *git.Commit
@@ -36,12 +53,14 @@ func main() {
 
 	// create repo from uri
 
-	//repo, err := git.Clone(p.uri, p.name, &git.CloneOptions{})
+	repo, err := git.Clone(p.uri, p.name, &git.CloneOptions{})
 	//ce(err)
+	fmt.Println(repo.Remotes.List())
+	os.Exit(1)
 
 	// open repo from dir
 
-	repo, err := git.OpenRepository(p.name)
+	//repo, err := git.OpenRepository(p.name)
 	ce(err)
 
 	p.repo = repo
